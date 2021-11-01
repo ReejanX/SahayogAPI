@@ -28,6 +28,6 @@ app.use("/auth", require("./routes/auth.routes"));
 app.use("/user", require("./routes/user.routes"));
 
 
-app.listen(5000, ()=>{
-    console.log("-- server running on 5000")
+app.listen(4444, ()=>{
+    console.log("-- server running on 4444")
 })

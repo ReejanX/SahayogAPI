@@ -6,8 +6,12 @@ const { roleControl } = require('../middleware/rolecontrol.middleware');
 
 
 // verification
+router.get("/", async(req, res)=>{
+    res.json({"hello":"111"})
+})
 
-router.get("/getUserDetails", roleControl('user'), async(req, res)=>{
+
+router.post("/getUserDetails", roleControl('user'), async(req, res)=>{
     try {
 
         const {user_id} = req.body
