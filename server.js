@@ -19,7 +19,7 @@ app.use("/auth", require("./routes/auth.routes"));
 //-- promote user to admin/mod
 //-- demote admin/mod to user
 //-- delete a user
-
+ 
 
 //USER FUNCTIONS
 //-- see user details
@@ -27,7 +27,7 @@ app.use("/auth", require("./routes/auth.routes"));
 
 app.use("/user", require("./routes/user.routes"));
 
-
+app.use("/donor", require("./routes/donor.routes"));
 app.listen(4444, ()=>{
     console.log("-- server running on 4444")
 })

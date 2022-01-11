@@ -1,6 +1,7 @@
 const router = require('express').Router()
 const pool = require("../db");
 const bcrypt = require("bcrypt");
+const role = require('../utils/const');
 //middlewares
 const { roleControl } = require('../middleware/rolecontrol.middleware');
 
@@ -45,7 +46,27 @@ router.post("/getAllUsers", roleControl('admin'), async (req, res) => {
         res.status(500).send("Server Error");
     }
 })
+// delete a user
 
+router.post("/deleteUser", roleControl('admin'), async (req, res) => {
+    try {
+
+        const { user_id } = req.body
+        const user = await pool.query("SELECT * FROM users WHERE user_id = $1", [user_id]);
+        if (user.rows.length == 0) {
+            return res.status(401).json({ "message": "User Not Found!" })
+        }
+        const deleteUser = await pool.query("DELETE FROM users WHERE user_id= $1 ", [user_id]);
+
+        res.json({
+            "msg": "user deleted"
+        })
+
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).send("Server Error");
+    }
+})
 
 // use a admin token to promote and demote any user to admin/mod
 

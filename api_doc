@@ -1,0 +1,51 @@
+
+
+/register
+
+donor_sign_up 
+
+request
+{
+    "name":"First Donor",
+    "email":"igiveBlood@email.com",
+    "password":"newUser@123",
+    "phoneNumber":"981122334",
+    "user_role":"donor",
+    "sex":"male",
+    "blood_group":"AB+",
+    "registration_number":"",
+    "landline_number":"",
+    "work_day":"",
+    "open_time":"",
+    "close_time":"",
+    "latitude":"",
+    "longitude":""
+}
+
+response
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjo3LCJhY2Nlc3NfbGV2ZWwiOiJkb25vciIsImlhdCI6MTYzOTY1MDU3MiwiZXhwIjoxNjM5NjU0MTcyfQ.CTDZP2-AC-Ca1KyDYGU6ZC_ltTfNSTMAMlkgRyW27to"
+}
+
+hospital_sign_up
+
+Request
+{
+    "name":"Red Cross",
+    "email":"fakeRedCross@email.com",
+    "password":"newHospital@123",
+    "phoneNumber":"981122334",
+    "user_role":"hospital",
+    "sex":"",
+    "blood_group":"",
+    "registration_number":"4034712",
+    "landline_number":"056525752",
+    "work_day":"all week",
+    "open_time":"4:00 AM",
+    "close_time":"12:00 AM",
+    "latitude":"27.707380269055673",
+    "longitude":"85.32728576076498"
+}
+
+
+
