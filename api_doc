@@ -1,6 +1,6 @@
 
 
-/register
+auth/register
 
 donor_sign_up 
 
@@ -48,4 +48,37 @@ Request
 }
 
 
+donor/postDonationRequest
 
+request 
+{
+    "user_id":13,
+    "user_role":"donor",
+    "donation_type":"whole blood",
+    "blood_group":"0+",
+    "date_till":"2022-01-15",
+    "donation_status":"TRUE",
+    "required_amount":3,
+    "venue_id":null,
+    "venue_contact":"056-525752",
+    "venue_name":"Donation Site",
+    "work_day":"all week",
+    "open_time":"4:00 AM",
+    "close_time":"12:00 AM",
+    "latitude":"27.707380269055673",
+    "longitude":"85.32728576076498"
+    }
+
+
+response
+
+{
+    "success": true,
+    "code": 200,
+    "message": "New Doantion Request Posted",
+    "data": {
+        "blood_group": "0+",
+        "date_till": "2022-01-15",
+        "required_amount": 3
+    }
+}

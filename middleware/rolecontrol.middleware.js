@@ -1,5 +1,6 @@
 const e = require('express');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const role = require('../utils/const');
 require('dotenv').config();
 
 exports.roleControl = function (user_role) {
@@ -20,10 +21,10 @@ exports.roleControl = function (user_role) {
             console.log('-- role-user', user.access_level)
             console.log('-- role-needed', user_role)
 
-            if (user.access_level == user_role || 'admin') {
+            if (user.access_level == user_role) {
                 next();
-            }else if(user.access_level == 'admin'){
-                next(); //should i do this?        
+            }else if(user.access_level == role.admin){
+                next();        
             }
             else {
                 res.status(401).json({ msg: "User Access Denied" })
