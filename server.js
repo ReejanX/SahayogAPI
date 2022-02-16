@@ -20,14 +20,21 @@ app.use("/auth", require("./routes/auth.routes"));
 //-- demote admin/mod to user
 //-- delete a user
  
-
 //USER FUNCTIONS
 //-- see user details
 //-- edit user details
 
 app.use("/user", require("./routes/user.routes"));
 
+//DONOR FUNTIONS
+//-- see all doantion requests
+//-- post new donation request
+//-- accept doantion request
 app.use("/donor", require("./routes/donor.routes"));
+
+
+
+
 app.listen(4444, ()=>{
     console.log("-- server running on 4444")
 })

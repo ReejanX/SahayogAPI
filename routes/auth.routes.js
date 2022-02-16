@@ -84,13 +84,11 @@ router.post("/register", validInfo, async (req, res) => {
         //5. generating out jwt token
         const token = jwtGenerator(newUser.rows[0].user_id, newUser.rows[0].user_role);
 
-        res.json({
-            token
-        });
+        res.json(responsify.success("200", "New User Registered Successfully", { token }))
     }
     catch (err) {
         console.error(err.message);
-        res.status(500).send("Server Error");
+        res.json(responsify.failed(500,"Server Error !"))
     }
 })
 
@@ -102,13 +100,14 @@ router.post("/login", validInfo, async (req, res) => {
         //2. check if the user doesnt exist
         const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [email]);
         if (user.rows.length === 0) {
-            return res.status(401).json("Password or Email is incorrect")
+            return res.json(responsify.failed(401,"Email or Password is incorrect"))
+
         }
         //3. check if passwords match
         const validPassword = await bcrypt.compare(password, user.rows[0].user_password)
 
         if (!validPassword) {
-            return res.status(401).json("Password is incorrect")
+            return res.json(responsify.failed(401,"Password is incorrect"))
         }
         //4. give jwt token
 
@@ -117,13 +116,13 @@ router.post("/login", validInfo, async (req, res) => {
         const user_email = user.rows[0].user_email
         const user_role = user.rows[0].user_role
         // res.json({ token, user_name, user_email, user_role});
-        res.json(responsify.success("00", "Hello", { token, user_name, user_email, user_role }))
+        res.json(responsify.success("200", "Hello", { token, user_name, user_email, user_role }))
 
 
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send("Server Error");
+        res.json(responsify.failed(500,"Server Error !"))
     }
 })
 
@@ -136,7 +135,7 @@ router.post("/send-reset-otp",validInfo, async (req, res) => {
 
         const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [email]);
         if (user.rows.length == 0) {
-            return res.status(401).send("User Doesnot Exists!")
+            return res.json(responsify.failed(404,"User Does not Exits"))
         }
         //otp generating, storing and sending via email
         const otp = parseInt(mailer.generateotp())
@@ -148,66 +147,92 @@ router.post("/send-reset-otp",validInfo, async (req, res) => {
 
         console.log(storeOTP.rows)
 
-        res.json(responsify.success(01, "reset otp has been sent to your email."))
+        res.json(responsify.success(200, "OTP has been sent to your email."))
 
     } catch (error) {
 
 
         console.log(error.stack)
-        res.status(500).send("Server Error");
+        res.json(responsify.failed(500,"Server Error !"))
+
     }
 })
 //reset password with valid otp
-router.post("/forgot-password", validInfo, async (req, res) => {
+router.post("/otp-check", validInfo, async (req, res) => {
 
     try {
         //request destruct
         const {
             email,
-            otp,
-            password
+            otp
         }= req.body
         
         const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [email]);
         if (user.rows.length == 0) {
-            return res.status(404).send("User Doesnot Exists!")
+            return res.json(responsify.failed(404,"User Does not Exits"))
         }
 
         const checkOTP = await pool.query("SELECT reset_otp FROM users WHERE user_email = $1", [email])
         if (!checkOTP){
-            return res.status(404).send("no otp sent")
+            return res.json(responsify.failed(404,"No OTP Sent"))
         }
         //otp check
-        console.log(checkOTP.rows)
-        if (checkOTP.rows[0].reset_otp !== otp) {
-            return res.json(responsify.failed(02, "Invalid OTP"))
+        console.log(checkOTP.rows[0].reset_otp)
+        console.log(otp)
+
+        if (checkOTP.rows[0].reset_otp != otp) {
+            
+
+            return res.json(responsify.failed(402, "Invalid OTP"))
         } else {
             // otp expiration check
             const seconds = await pool.query("SELECT EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - otp_timestamp)) AS difference FROM users WHERE user_email = $1",[email])
             if (seconds.rows[0].difference > 120){
-                return res.status(401).send("The OTP has expired please Resend OTP and try again!")
+                
+                return res.json(responsify.failed(401, "The OTP has expired please Resend OTP and try again!"))
             }
-            // bcrypt user password
-            const saltRound = 10;
-            const salt = await bcrypt.genSalt(saltRound);
-            const bcryptPassword = await bcrypt.hash(password, salt);
-            //reset password
-            const changePassword = await pool.query("UPDATE users SET user_password = $1 WHERE user_email = $2",[bcryptPassword,email])
-            if (changePassword){
-                res.json(responsify.success(01,"Password reset Successfull"))
-            }else{
-                res.json(responsify.failed(02,"Password reset Failed"))
-            }
-            
+           
+                    res.json(responsify.success(200, "OTP VERIFIED"))
+
+
         }
 
 
     } catch (error) {
             console.log(error.stack)
-            res.status(500).send("Server Error")
+            res.json(responsify.failed(500,"Server Error !"))
+
     }
 })
- 
+
+router.post("/reset-password",validInfo,async(req,res)=>{
+
+    try {
+        const{email,
+        password}=req.body
+
+        const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [email]);
+        if (user.rows.length == 0) {
+            return res.json(responsify.failed(404,"User Does not Exits"))
+        }
+        // bcrypt user password
+        const saltRound = 10;
+        const salt = await bcrypt.genSalt(saltRound);
+        const bcryptPassword = await bcrypt.hash(password, salt);
+        //reset password
+        const changePassword = await pool.query("UPDATE users SET user_password = $1 WHERE user_email = $2",[bcryptPassword,email])
+        if (changePassword){
+            res.json(responsify.success(200,"Password reset Successful"))
+        }else{
+            res.json(responsify.failed(404,"Password reset Failed"))
+        }
+        
+    } catch (error) {
+        console.log(error.stack)
+        res.json(responsify.failed(500,"Server Error !"))
+
+    }
+})
 
 
 module.exports = router;

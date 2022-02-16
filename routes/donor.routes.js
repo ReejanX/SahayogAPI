@@ -8,10 +8,10 @@ const { roleControl } = require('../middleware/rolecontrol.middleware');
 const e = require('express');
 
 //show all donation requests
-router.get("/getAllRequestList", roleControl(role.donor), async (req, res) => {
+router.get("/getAllRequestList", async (req, res) => {
 
     try {
-        const donationRequests = await pool.query("SELECT * FROM donation_requests ORDER BY date_till ASC")
+        const donationRequests = await pool.query("SELECT DR.donation_type, DR.donation_status, DR.date_till, DR.patient_name, DR.blood_group, DR.required_amount, U.user_name, U.user_phone, V.latitude, V.longitude, V.venue_contact, V.venue_name FROM donation_requests DR INNER JOIN users U ON (DR.user_id = U.user_id) JOIN venue V ON V.venue_id = DR.venue_id;")
 
         if (donationRequests == null || donationRequests.rowCount == 0) {
             return res.status(401).json({ "msg": "sorry no requests found" })

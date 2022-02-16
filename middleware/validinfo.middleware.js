@@ -1,3 +1,6 @@
+
+const responsify = require("../utils/reponsify")
+
 module.exports = function(req, res, next) {
     const { email, name, password, phoneNumber  } = req.body ;
   
@@ -11,28 +14,24 @@ module.exports = function(req, res, next) {
     if (req.path === "/register") {
       console.log(!email.length);
       if (![email, name, password, phoneNumber].every(Boolean)) {
-        return res.status(401).json("Missing Credentials");
+        return res.json(responsify.failed(401,"Missing Credentials"))
       } else if (!validEmail(email)) {
-        return res.status(401).json("Invalid Email");
+        return res.json(responsify.failed(401,"Invalid Email"))
       }else if (!validPhoneNumber){
-        return res.status(401).json("Invalid Phone Number")
+        return res.json(responsify.failed(401,"Invalid Phone Number"))
       }
 
     } else if (req.path === "/login") {
       if (![email, password].every(Boolean)) {
-        return res.status(401).json("Missing Credentials");
+        return res.json(responsify.failed(401,"Missing Credentials"))
       } else if (!validEmail(email)) {
-        return res.status(401).json("Invalid Email");
+        return res.json(responsify.failed(401,"Invalid Email"))
       }
     }
 
     if (!validEmail(email)){
-      return res.status(401).json("Invalid Email");
+      return res.json(responsify.failed(401,"Invalid Email"))
     }
     
-    if (!validPhoneNumber(phoneNumber)) {
-
-      return res.status(401).json("Invalid Phone Number")
-    }
     next();
   };
