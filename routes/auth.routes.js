@@ -21,7 +21,9 @@ router.post("/register", validInfo, async (req, res) => {
             email,
             password,
             phoneNumber,
-            user_role, sex,
+            user_role,
+            sex,
+            fcm_token,
             blood_group,
             registration_number,
             landline_number,
@@ -33,7 +35,7 @@ router.post("/register", validInfo, async (req, res) => {
         //2. check if user exist
         const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [email]);
         if (user.rows.length !== 0) {
-            return res.status(401).send("User Already Exists!")
+            return res.json(responsify.failed(401,"User Does not Exists"))
         }
         //3. bcrypt user password
         const saltRound = 10;
@@ -49,19 +51,19 @@ router.post("/register", validInfo, async (req, res) => {
             switch (newUserRole) {
                 case role.donor:
                     //register user as donor
-                    const newDonor = await pool.query("INSERT INTO donors (user_id, sex, donor_blood_group) VALUES ($1, $2, $3) RETURNING *",
+                    const newDonor = await pool.query("INSERT INTO donors (user_id, sex, donor_blood_group,fcm_token) VALUES ($1, $2, $3,$4) RETURNING *",
                         [newUserID,
                             sex,
-                            blood_group]
+                            blood_group,
+                        fcm_token]
                     );
                     break;
                 case role.hospital:
                     //register new hospital venuw
-                    const newVenue = await pool.query("INSERT INTO venue(venue_name,venue_contact,work_day,open_time,close_time,latitude,longitude) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+                    const newVenue = await pool.query("INSERT INTO venue(venue_name,venue_contact,open_time,close_time,latitude,longitude) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
                         [
                             name,
-                            landline_number,
-                            work_day,
+                            phoneNumber,               
                             open_time,
                             close_time,
                             latitude,
@@ -71,7 +73,7 @@ router.post("/register", validInfo, async (req, res) => {
                     //register user as hospital
                     const newHospital = await pool.query("INSERT INTO hospitals (user_id,registration_number,venue_id) VALUES ($1,$2,$3) RETURNING *",
                         [newUserID,
-                            registration_number,
+                        registration_number,
                             newVenueID]
                     );
                     break;
@@ -115,8 +117,17 @@ router.post("/login", validInfo, async (req, res) => {
         const user_name = user.rows[0].user_name
         const user_email = user.rows[0].user_email
         const user_role = user.rows[0].user_role
+        const user_id = user.rows[0].user_id
+        if (user_role == role.donor){
+            const donor = await pool.query("SELECT * FROM donors where user_id = $1",[user_id] )
+            var type_id = donor.rows[0].donor_id
+        }else if (user_role == role.hospital){
+            const hospital = await pool.query("SELECT * FROM hospitals where user_id = $1",[user_id] )
+            var type_id = hospital.rows[0].hospital_id
+        }
+
         // res.json({ token, user_name, user_email, user_role});
-        res.json(responsify.success("200", "Hello", { token, user_name, user_email, user_role }))
+        res.json(responsify.success("200", "Login Successful", { token, user_id, user_name, user_email, user_role,type_id }))
 
 
 
@@ -135,17 +146,18 @@ router.post("/send-reset-otp",validInfo, async (req, res) => {
 
         const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [email]);
         if (user.rows.length == 0) {
-            return res.json(responsify.failed(404,"User Does not Exits"))
+            return res.json(responsify.failed(404,"User Does not Exists"))
         }
         //otp generating, storing and sending via email
         const otp = parseInt(mailer.generateotp())
         console.log(otp);
 
+        // send otp user email
         // mailer.sendOtp(email,otp)
 
         const storeOTP = await pool.query("UPDATE users SET reset_otp = $1, otp_timestamp = CURRENT_TIMESTAMP  WHERE user_email = $2", [otp, email])
 
-        console.log(storeOTP.rows)
+        // console.log(storeOTP.rows)
 
         res.json(responsify.success(200, "OTP has been sent to your email."))
 
@@ -205,7 +217,7 @@ router.post("/otp-check", validInfo, async (req, res) => {
     }
 })
 
-router.post("/reset-password",validInfo,async(req,res)=>{
+router.put("/reset-password",validInfo,async(req,res)=>{
 
     try {
         const{email,
@@ -222,6 +234,7 @@ router.post("/reset-password",validInfo,async(req,res)=>{
         //reset password
         const changePassword = await pool.query("UPDATE users SET user_password = $1 WHERE user_email = $2",[bcryptPassword,email])
         if (changePassword){
+            console.log("resetSuccess")
             res.json(responsify.success(200,"Password reset Successful"))
         }else{
             res.json(responsify.failed(404,"Password reset Failed"))
@@ -233,6 +246,44 @@ router.post("/reset-password",validInfo,async(req,res)=>{
 
     }
 })
+
+//change password with current password
+router.put("/change-password",validInfo,roleControl(role.donor),async(req,res)=>{
+    try {
+        
+        const{
+            email,
+            oldpassword,
+            newpassword} = req.body
+        
+        const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [email]);
+        if (user.rows.length == 0) {
+            return res.json(responsify.failed(404,"User Does not Exits"))
+        }
+        //check password
+        const validPassword = await bcrypt.compare(oldpassword, user.rows[0].user_password)
+
+        if (!validPassword) {
+            return res.json(responsify.failed(401,"Password is incorrect"))
+        }
+        // bcrypt user password
+        const saltRound = 10;
+        const salt = await bcrypt.genSalt(saltRound);
+        const bcryptPassword = await bcrypt.hash(newpassword, salt);
+        //reset password
+        const changePassword = await pool.query("UPDATE users SET user_password = $1 WHERE user_email = $2",[bcryptPassword,email])
+        if (changePassword){
+            res.json(responsify.success(200,"Password Change Successful"))
+        }else{
+            res.json(responsify.failed(404,"Password Change Failed"))
+        }
+        
+    } catch (error) {
+        console.log(error.stack)
+        res.json(responsify.failed(500,"Server Error !"))
+    }
+})
+
 
 
 module.exports = router;

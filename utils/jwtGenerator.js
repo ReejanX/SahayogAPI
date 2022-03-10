@@ -7,7 +7,8 @@ function jwtGenerator(user_id, role) {
         access_level : role
     }
 
-    return jwt.sign(payload, process.env.jwtSecret, {expiresIn: "1hr" })
+
+    return jwt.sign(payload, process.env.jwtSecret, {expiresIn: "20d" })
 
 }
 

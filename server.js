@@ -6,7 +6,7 @@ const users = require('./contract/user.values')
 app.use(express.json()) //req.body
 app.use(cors())
 
-
+process.env.TZ = "Asia/Nepal";
 //ROUTES//
 
 //USER AUTHENTICATIONS
@@ -32,6 +32,10 @@ app.use("/user", require("./routes/user.routes"));
 //-- accept doantion request
 app.use("/donor", require("./routes/donor.routes"));
 
+
+//PROFILE FUNCTIONS
+
+app.use("/profile",require("./routes/profile.routes"));
 
 
 
